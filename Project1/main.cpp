@@ -7,6 +7,7 @@
 #include <glm/mat4x4.hpp>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 const std::vector<const char*> validationLayers = {
@@ -38,6 +39,9 @@ void pickPhysicalDevice();
 void createLogicalDevice();
 void createSwapchain();
 void createImageViews();
+void createGraphicsPipeline();
+
+static std::vector<char> readFile(const std::string& filename);
 
 
 int main() {
@@ -289,3 +293,39 @@ void createImageViews() {
 
 
 }
+
+void createGraphicsPipeline() {
+
+    auto vertShaderCode = readFile("vert.spv");
+    auto fragShaderCode = readFile("frag.spv");
+
+    VkShaderModule vertShader;
+    VkShaderModule fragShader;
+
+
+
+
+}
+
+
+static std::vector<char> readFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file!");
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+         
+    return buffer;
+
+}
+
+
+
