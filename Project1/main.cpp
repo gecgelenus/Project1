@@ -122,6 +122,7 @@ void pickPhysicalDevice() {
         std::cout << "Physical device count: " << deviceCount << std::endl;
     }
 
+    std::string deviceName = " ";
 
     for (VkPhysicalDevice pDevice : physicalDevices) {
         VkPhysicalDeviceProperties properties = {};
@@ -132,9 +133,18 @@ void pickPhysicalDevice() {
         std::cout << "--------------------------------" << std::endl;
         if (properties.deviceType == 2) {
             physicalDevice = pDevice;
+            deviceName = properties.deviceName;
         }
     
     }
+
+    if (deviceName != " ") {
+        std::cout << "Device selected: " << deviceName << std::endl;
+    }
+    else {
+        physicalDevice = physicalDevices[0];
+        std::cout << "Couldn't find discrete GPU, selecting first GPU instead!" << std::endl;
+    } 
 
 
 
