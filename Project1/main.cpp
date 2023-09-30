@@ -40,6 +40,7 @@ void createLogicalDevice();
 void createSwapchain();
 void createImageViews();
 void createGraphicsPipeline();
+VkShaderModule createShaderModule(const std::vector<char>& code);
 
 static std::vector<char> readFile(const std::string& filename);
 
@@ -56,6 +57,7 @@ int main() {
     createLogicalDevice();
     createSwapchain();
     createImageViews();
+    createGraphicsPipeline();
 
 
     while (!glfwWindowShouldClose(window)) {
@@ -299,12 +301,45 @@ void createGraphicsPipeline() {
     auto vertShaderCode = readFile("vert.spv");
     auto fragShaderCode = readFile("frag.spv");
 
-    VkShaderModule vertShader;
-    VkShaderModule fragShader;
+    VkShaderModule vertShader = createShaderModule(vertShaderCode);
+    VkShaderModule fragShader = createShaderModule(fragShaderCode);
+
+    
+    VkPipelineShaderStageCreateInfo vertInfo{};
+    vertInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertInfo.module = vertShader;
+    vertInfo.pName = "main";
+    vertInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    
+    
+    VkPipelineShaderStageCreateInfo fragInfo{};
+    vertInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertInfo.module = fragShader;
+    vertInfo.pName = "main";
+    vertInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vertInfo, fragInfo };
+
+
+}
+
+VkShaderModule createShaderModule(const std::vector<char>& code)
+{
+    VkShaderModule module;
+
+    VkShaderModuleCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    info.codeSize = code.size();
+    info.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    if (vkCreateShaderModule(device, &info, nullptr, &module) != VK_SUCCESS) {
+        std::cerr << "Couldn't create shader module" << std::endl;
+        return nullptr;
+    }
 
 
 
-
+    return module;
 }
 
 
