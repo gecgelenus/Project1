@@ -26,6 +26,7 @@ VkDevice device;
 VkQueue graphicsQueue;
 
 VkRenderPass renderPass;
+VkPipeline graphicsPipeline;
 VkPipelineLayout pipelineLayout;
 
 VkSurfaceKHR surface;
@@ -311,12 +312,13 @@ void createRenderPass() {
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
+    colorAttachment.format = surfaceFormat.format;
 
 
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -327,6 +329,7 @@ void createRenderPass() {
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
 
@@ -353,10 +356,10 @@ void createGraphicsPipeline() {
     
     
     VkPipelineShaderStageCreateInfo fragInfo{};
-    vertInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertInfo.module = fragShader;
-    vertInfo.pName = "main";
-    vertInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragInfo.module = fragShader;
+    fragInfo.pName = "main";
+    fragInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertInfo, fragInfo };
 
@@ -370,6 +373,8 @@ void createGraphicsPipeline() {
     dynamicStates.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStates.dynamicStateCount = static_cast<uint32_t>(dynamicState.size());
     dynamicStates.pDynamicStates = dynamicState.data();
+
+    
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -392,6 +397,13 @@ void createGraphicsPipeline() {
     VkRect2D scissor{};
     scissor.offset = { 0,0 };
     scissor.extent = currentExtent;
+
+    VkPipelineViewportStateCreateInfo viewportInfo{};
+    viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportInfo.viewportCount = 1;
+    viewportInfo.pViewports = &viewport;
+    viewportInfo.scissorCount = 1;
+    viewportInfo.pScissors = &scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
     rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -439,6 +451,19 @@ void createGraphicsPipeline() {
     pipelineInfo.pDynamicState = &dynamicStates;
     pipelineInfo.pMultisampleState = &multisampleInfo;
     pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.pViewportState = &viewportInfo;
+    pipelineInfo.pDepthStencilState = nullptr;
+    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1; // invalid index
+
+    if (vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        std::cerr << "Graphics pipeline couldn't created!" << std::endl;
+    }
+    else {
+        std::cout << "Graphics pipeline is created." << std::endl;
+    }
 
 
 
