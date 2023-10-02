@@ -330,9 +330,9 @@ void createRenderPass() {
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
 
-    if(vkCreateRenderPass())
-
-
+    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        std::cerr << "Couldn't create render pass" << std::endl;
+    }
 }
 
 
@@ -425,6 +425,20 @@ void createGraphicsPipeline() {
     if (vkCreatePipelineLayout(device, &layoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		std::cerr << "Couldn't create pipeline layout" << std::endl;
 	}
+
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputInfo;
+    pipelineInfo.pColorBlendState = &colorBlendInfo;
+    pipelineInfo.pRasterizationState = &rasterizerInfo;
+    pipelineInfo.pDynamicState = &dynamicStates;
+    pipelineInfo.pMultisampleState = &multisampleInfo;
+    pipelineInfo.layout = pipelineLayout;
 
 
 
