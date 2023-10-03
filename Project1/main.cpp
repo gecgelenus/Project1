@@ -3,12 +3,17 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
+#define MAX_FRAME_ON_PROCESS 3
+
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <vector>
+
+
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
@@ -36,13 +41,14 @@ VkSurfaceFormatKHR surfaceFormat;
 VkPresentModeKHR presentMode;
 
 VkCommandPool commandPool;
-VkCommandBuffer commandBuffer;
-
-VkSemaphore renderFinished;
-VkSemaphore imageAvailable;
-VkFence inFlightFence;
+std::vector<VkCommandBuffer>  commandBuffer;
 
 
+std::vector<VkSemaphore> renderSemaphores;
+std::vector<VkSemaphore> imageAvailableSemaphores;
+std::vector<VkFence> frameFences;
+
+uint32_t currentFrame;
 
 std::vector<VkImage> swapchainImages;
 std::vector<VkImageView> swapchainImageViews;
@@ -75,7 +81,9 @@ int main() {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+    
 
     initVulkan();
     createSurface();
@@ -311,6 +319,7 @@ void createImageViews() {
         info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
         info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        
 
         if (vkCreateImageView(device, &info, nullptr, &swapchainImageViews[i]) != VK_SUCCESS) {
             std::cerr << "Image view couldn't created." << std::endl;
@@ -565,14 +574,17 @@ void createCommandPool(){
 
 void allocateCommandBuffer(){
 
+    commandBuffer.resize(MAX_FRAME_ON_PROCESS);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = MAX_FRAME_ON_PROCESS;
 
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffer.data()) != VK_SUCCESS) {
         std::cerr << "Couldn't allocate command buffer" << std::endl;
     }
     else {
@@ -626,6 +638,8 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
 
     vkCmdDraw(cbuffer, 3, 1, 0, 0);
 
+    vkCmdEndRenderPass(cbuffer);
+
     if (vkEndCommandBuffer(cbuffer) != VK_SUCCESS) {
         std::cerr << "Couldn't finish the recording command buffer" << std::endl;
     }
@@ -637,67 +651,81 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
 
 void createSyncObject(){
 
+    renderSemaphores.resize(MAX_FRAME_ON_PROCESS);
+    imageAvailableSemaphores.resize(MAX_FRAME_ON_PROCESS);
+    frameFences.resize(MAX_FRAME_ON_PROCESS);
+
+
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS) {
-        std::cerr << "Semaphore couldn't created" << std::endl;
-    }
-    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinished) != VK_SUCCESS) {
-        std::cerr << "Semaphore couldn't created" << std::endl;
-    }
-
+    
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-        std::cerr << "Fence couldn't created" << std::endl;
+    
+    
+    for (int i = 0; i < MAX_FRAME_ON_PROCESS; i++) {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderSemaphores[i]) != VK_SUCCESS) {
+            std::cerr << "Semaphore couldn't created" << std::endl;
+        }
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS) {
+            std::cerr << "Semaphore couldn't created" << std::endl;
+        }
+
+        if (vkCreateFence(device, &fenceInfo, nullptr, &frameFences[i]) != VK_SUCCESS) {
+            std::cerr << "Fence couldn't created" << std::endl;
+        }
+
     }
-
-
 
 }
 
 void drawExample(){
 
     uint32_t imageIndex = 0;
+    
 
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-    vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(device, 1, &frameFences[currentFrame], VK_TRUE, UINT64_MAX);
 
-    vkResetFences(device, 1, &inFlightFence);
+    vkResetFences(device, 1, &frameFences[currentFrame]);
 
-    vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailable, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    vkResetCommandBuffer(commandBuffer, 0);
+    vkResetCommandBuffer(commandBuffer[currentFrame], 0);
 
-    recordCommandBuffer(commandBuffer, imageIndex);
+    recordCommandBuffer(commandBuffer[currentFrame], imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pCommandBuffers = &commandBuffer[currentFrame];
     submitInfo.commandBufferCount = 1;
-    submitInfo.pSignalSemaphores = { &renderFinished };
+    submitInfo.pSignalSemaphores = { &renderSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = { &imageAvailable };
+    submitInfo.pWaitSemaphores = { &imageAvailableSemaphores[currentFrame]};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitDstStageMask = waitStages;
 
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, frameFences[currentFrame]) != VK_SUCCESS) {
         std::cerr << "Couldn't submit command buffer to graphics queue!" << std::endl;
     }
 
     VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pSwapchains = { &swapchain };
     presentInfo.swapchainCount = 1;
     presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pWaitSemaphores = { &renderFinished };
+    presentInfo.pWaitSemaphores = { &renderSemaphores[currentFrame]};
     presentInfo.waitSemaphoreCount = 1;
 
     vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+
+    currentFrame = (currentFrame + 1) % MAX_FRAME_ON_PROCESS;
+
 
 }
 
