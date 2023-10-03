@@ -88,10 +88,11 @@ int main() {
     createFrameBuffers();
     createCommandPool();
     allocateCommandBuffer();
-    
+    createSyncObject();
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        drawExample();
     }
 
     glfwDestroyWindow(window);
@@ -348,6 +349,15 @@ void createRenderPass() {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkSubpassDependency subDepend{};
+    subDepend.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subDepend.dstSubpass = 0;
+    subDepend.srcStageMask =  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ;
+    subDepend.srcAccessMask = 0;
+    subDepend.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subDepend.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     
 
     VkRenderPassCreateInfo renderPassInfo{};
@@ -356,6 +366,8 @@ void createRenderPass() {
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &subDepend;
 
     if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         std::cerr << "Couldn't create render pass" << std::endl;
@@ -651,6 +663,7 @@ void drawExample(){
 
     uint32_t imageIndex = 0;
 
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 
@@ -661,6 +674,30 @@ void drawExample(){
     vkResetCommandBuffer(commandBuffer, 0);
 
     recordCommandBuffer(commandBuffer, imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pSignalSemaphores = { &renderFinished };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = { &imageAvailable };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+        std::cerr << "Couldn't submit command buffer to graphics queue!" << std::endl;
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.pSwapchains = { &swapchain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pWaitSemaphores = { &renderFinished };
+    presentInfo.waitSemaphoreCount = 1;
+
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
 }
 
