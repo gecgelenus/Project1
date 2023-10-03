@@ -38,6 +38,11 @@ VkPresentModeKHR presentMode;
 VkCommandPool commandPool;
 VkCommandBuffer commandBuffer;
 
+VkSemaphore renderFinished;
+VkSemaphore imageAvailable;
+VkFence inFlightFence;
+
+
 
 std::vector<VkImage> swapchainImages;
 std::vector<VkImageView> swapchainImageViews;
@@ -55,10 +60,15 @@ void createFrameBuffers();
 void createCommandPool();
 void allocateCommandBuffer();
 void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex);
+void createSyncObject();
+void drawExample();
+
 
 VkShaderModule createShaderModule(const std::vector<char>& code);
 
 static std::vector<char> readFile(const std::string& filename);
+
+
 
 
 int main() {
@@ -610,6 +620,47 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
 
 
 
+
+}
+
+void createSyncObject(){
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailable) != VK_SUCCESS) {
+        std::cerr << "Semaphore couldn't created" << std::endl;
+    }
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinished) != VK_SUCCESS) {
+        std::cerr << "Semaphore couldn't created" << std::endl;
+    }
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+        std::cerr << "Fence couldn't created" << std::endl;
+    }
+
+
+
+}
+
+void drawExample(){
+
+    uint32_t imageIndex = 0;
+
+
+    vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+
+    vkResetFences(device, 1, &inFlightFence);
+
+    vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailable, VK_NULL_HANDLE, &imageIndex);
+
+    vkResetCommandBuffer(commandBuffer, 0);
+
+    recordCommandBuffer(commandBuffer, imageIndex);
 
 }
 
