@@ -23,9 +23,14 @@ struct Vertex {
 const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}
+    {{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}
  };
 
+
+const std::vector<uint16_t> indicies = {
+    0, 1, 2, 0, 2, 3
+};
 
 
 const std::vector<const char*> validationLayers = {
@@ -49,6 +54,9 @@ VkPipelineLayout pipelineLayout;
 
 VkBuffer vertexBuffer;
 VkDeviceMemory vertexBufferMemory;
+VkBuffer indexBuffer;
+VkDeviceMemory indexBufferMemory;
+
 
 VkBuffer stagingBuffer;
 VkDeviceMemory stagingBufferMemory;
@@ -83,6 +91,7 @@ void createRenderPass();
 void createGraphicsPipeline();
 void createFrameBuffers();
 void createVertexBuffer();
+void createIndexBuffer();
 void createCommandPool();
 void allocateCommandBuffer();
 void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex);
@@ -137,6 +146,7 @@ int main() {
     createFrameBuffers();
     createCommandPool();
     createVertexBuffer();
+    createIndexBuffer();
     allocateCommandBuffer();
     createSyncObject();
 
@@ -642,6 +652,29 @@ void createVertexBuffer(){
 
 }
 
+void createIndexBuffer(){
+
+    VkDeviceSize size = sizeof(indicies[0]) * sizeof(uint16_t);
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
+    
+
+    createBuffer(size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+    void* data;
+    vkMapMemory(device, stagingBufferMemory, 0, size, 0, &data);
+    memcpy(data, indicies.data(), size);
+    vkUnmapMemory(device, stagingBufferMemory);
+
+    copyBuffers(stagingBuffer, indexBuffer, size);
+
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+
+
+}
+
 void createCommandPool(){
 
     VkCommandPoolCreateInfo poolInfo{};
@@ -714,6 +747,8 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(cbuffer, 0, 1, buffers, offsets);
 
+    vkCmdBindIndexBuffer(cbuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -729,7 +764,7 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
     scissor.extent = currentExtent;
     vkCmdSetScissor(cbuffer, 0, 1, &scissor);
 
-    vkCmdDraw(cbuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdDrawIndexed(cbuffer, static_cast<uint32_t>(indicies.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(cbuffer);
 
