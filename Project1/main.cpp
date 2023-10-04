@@ -27,6 +27,24 @@ struct Vertex {
     
 };
 
+struct Vertex2 {
+    glm::vec3 pos;
+    glm::vec3 color;
+
+};
+
+const std::vector<Vertex2> vertices2 = {
+    {{1.000000, -1.000000, -1.000000},{1.0f, 0.0f, 0.0f} },
+    {{1.000000, -1.000000, 1.000000 } , { 1.0f, 1.0f, 1.0f }},
+    {{-1.000000, -1.000000, 1.000000 } , { 1.0f, 0.0f, 1.0f }},
+    {{-1.000000, -1.000000, -1.000000 } , { 1.0f, 1.0f, 0.0f }},
+    {{1.000000, 1.000000, -1.000000 } , { 0.0f, 1.0f, 0.0f }},
+    {{0.999999, 1.000000, 1.000001 } , { 1.0f, 0.0f, 1.0f }},
+    {{ -1.000000, 1.000000, 1.000000}, { 0.0f, 0.0f, 1.0f }},
+    {{- 1.000000, 1.000000, - 1.000000}, {0.0f, 1.0f, 1.0f}}
+};
+
+
 const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
@@ -38,6 +56,20 @@ const std::vector<Vertex> vertices = {
 const std::vector<uint16_t> indicies = {
     0, 1, 2, 0, 2, 3
 };
+
+const std::vector<uint16_t> indicies2 = {
+    4, 0, 3,
+    4, 3, 7,
+    2, 6, 7,
+    2, 7, 3,
+    1, 5 ,2,
+    5, 6, 2,
+    0, 4, 1,
+    4, 5 ,1,
+    4 ,7, 5,
+    7, 6 ,5,
+    0, 1, 2,
+    0, 2, 3};
 
 
 const std::vector<const char*> validationLayers = {
@@ -96,7 +128,9 @@ std::vector<VkImageView> swapchainImageViews;
 std::vector<VkFramebuffer> swapchainBuffers;
 
 struct uniformBufferObject MVP {};
-
+float ypos = 0;
+float xpos = 0;
+float zpos = 0;
 
 void initVulkan();
 void createSurface();
@@ -118,7 +152,7 @@ void allocateCommandBuffer();
 void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex);
 void createSyncObject();
 void drawExample();
-
+void updateUniformBuffer(uint32_t imageIndex);
 
 // helpers
 
@@ -145,7 +179,19 @@ VkShaderModule createShaderModule(const std::vector<char>& code);
 
 static std::vector<char> readFile(const std::string& filename);
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 
+    if (key == GLFW_KEY_A && action == GLFW_PRESS || key == GLFW_KEY_A && action == GLFW_REPEAT) {
+        xpos += 0.1f;
+    }else if (key == GLFW_KEY_D && action == GLFW_PRESS || key == GLFW_KEY_D && action == GLFW_REPEAT) {
+        xpos -= 0.1f;
+    }else if (key == GLFW_KEY_W && action == GLFW_PRESS || key == GLFW_KEY_W && action == GLFW_REPEAT) {
+        ypos -= 0.1f;
+    }else if (key == GLFW_KEY_S && action == GLFW_PRESS || key == GLFW_KEY_S && action == GLFW_REPEAT) {
+        ypos += 0.1f;
+    }
+
+}
 
 
 int main() {
@@ -155,9 +201,11 @@ int main() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 
+    glfwSetKeyCallback(window, key_callback);
+
     MVP.model = glm::mat4(1.0f);
-    MVP.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    MVP.proj = glm::perspective(glm::radians(45.0f), ((float)800/600), 0.1f, 10.0f);
+    MVP.view = glm::lookAt(glm::vec3(4.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP.proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 10.0f);
 
     MVP.proj[1][1] *= -1;
     
@@ -506,19 +554,19 @@ void createGraphicsPipeline() {
     VkVertexInputBindingDescription bindingInfo{};
     bindingInfo.binding = 0;
     bindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    bindingInfo.stride = sizeof(Vertex);
+    bindingInfo.stride = sizeof(Vertex2);
 
 
     VkVertexInputAttributeDescription attributeInfos[2];
     attributeInfos[0].binding = 0;
     attributeInfos[0].location = 0;
-    attributeInfos[0].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeInfos[0].offset = offsetof(Vertex, pos);
+    attributeInfos[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeInfos[0].offset = offsetof(Vertex2, pos);
 
     attributeInfos[1].binding = 0;
     attributeInfos[1].location = 1;
     attributeInfos[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeInfos[1].offset = offsetof(Vertex, color);;
+    attributeInfos[1].offset = offsetof(Vertex2, color);;
     
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -661,7 +709,7 @@ void createFrameBuffers(){
 
 void createVertexBuffer(){
 
-    VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize size = sizeof(vertices2[0]) * vertices2.size();
     createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         vertexBuffer, vertexBufferMemory);
@@ -675,7 +723,7 @@ void createVertexBuffer(){
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, size, 0, &data);
-    memcpy(data, vertices.data(), size);
+    memcpy(data, vertices2.data(), size);
     vkUnmapMemory(device, stagingBufferMemory);
 
     copyBuffers(stagingBuffer, vertexBuffer, size);
@@ -791,7 +839,7 @@ void createDescriptorSetLayout(){
 
 void createIndexBuffer(){
 
-    VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
+    VkDeviceSize size = sizeof(indicies2[0]) * indicies2.size();
     createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingBufferMemory);
     
@@ -801,7 +849,7 @@ void createIndexBuffer(){
 
     void* data;
     vkMapMemory(device, stagingBufferMemory, 0, size, 0, &data);
-    memcpy(data, indicies.data(), size);
+    memcpy(data, indicies2.data(), size);
     vkUnmapMemory(device, stagingBufferMemory);
 
     copyBuffers(stagingBuffer, indexBuffer, size);
@@ -903,7 +951,7 @@ void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex){
     scissor.extent = currentExtent;
     vkCmdSetScissor(cbuffer, 0, 1, &scissor);
 
-    vkCmdDrawIndexed(cbuffer, static_cast<uint32_t>(indicies.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(cbuffer, static_cast<uint32_t>(indicies2.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(cbuffer);
 
@@ -961,6 +1009,8 @@ void drawExample(){
 
     vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
+    updateUniformBuffer(imageIndex);
+
     vkResetCommandBuffer(commandBuffer[currentFrame], 0);
 
     recordCommandBuffer(commandBuffer[currentFrame], imageIndex);
@@ -994,6 +1044,17 @@ void drawExample(){
     currentFrame = (currentFrame + 1) % MAX_FRAME_ON_PROCESS;
 
 
+}
+
+void updateUniformBuffer(uint32_t imageIndex){
+
+    MVP.model = glm::mat4(1.0f);
+    MVP.view = glm::lookAt(glm::vec3(4.0f + xpos, 3.0f + ypos, 3.0f + zpos), glm::vec3(0.0f + xpos, 0.0f + ypos, 0.0f + zpos), glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP.proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 10.0f);
+
+    MVP.proj[1][1] *= -1;
+
+    memcpy(uniformBufferMemoryMaps[imageIndex], &MVP, sizeof(MVP));
 }
 
 void copyBuffers(VkBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size){
