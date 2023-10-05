@@ -11,7 +11,7 @@ public:
 	void initialize();
 	void createWindow();
 	void createSurface();
-	std::vector<VkImage>& createSwapchain();
+	void createSwapchain();
 	std::vector<VkImage>& getSwapchainImages();
 	
 	GLFWwindow* getWindow() { return window; }
@@ -19,13 +19,18 @@ public:
 	uint32_t getHeight() { return height; }
 	VkSurfaceKHR getSurface() { return surface; }
 	VkFormat getFormat() { return surfaceFormat.format; }
+	VkExtent2D getExtent() { return currentExtent; }
+	VkPresentModeKHR getPresentMode() { return presentMode; }
+	VkSwapchainKHR getSwapchain() { return swapchain; }
 
 	Instance* instance;
-
+	uniformBufferObject MVP[2];
 
 private:
 	GLFWwindow* window;
 	VkSurfaceKHR surface;
+
+	
 
 	VkSwapchainKHR swapchain;
 	std::vector<VkImage> swapchainImages;

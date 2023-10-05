@@ -16,6 +16,8 @@ public:
 	VkDevice getDevice() { return device; }
 	VkQueue getGraphicsQueue() { return graphicsQueue; }
 
+	VkCommandPool commandPool;
+
 private:
 	const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"

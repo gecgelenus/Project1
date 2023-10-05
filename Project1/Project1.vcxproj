@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="Instance.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -147,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="dependencies.hpp" />
     <ClInclude Include="Instance.hpp" />
+    <ClInclude Include="Object.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
