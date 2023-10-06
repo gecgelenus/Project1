@@ -15,17 +15,14 @@ Window::~Window()
 void Window::initialize()
 {
 	glfwInit();
-    MVP[0].model = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 1.0f));
-    MVP[0].view = glm::lookAt(glm::vec3(18.0f, 18.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    MVP[0].proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 100.0f);
+    MVP.view = glm::lookAt(glm::vec3(18.0f, 18.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP.proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 100.0f);
 
-    MVP[0].proj[1][1] *= -1;
+    MVP.proj[1][1] *= -1;
 
-    MVP[1].model = glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 5.0f, 5.0f));
-    MVP[1].view = glm::lookAt(glm::vec3(18.0f, 18.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    MVP[1].proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 100.0f);
+    MVP.model[0] = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 1.0f));
+    MVP.model[1] = glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 5.0f, 5.0f));
 
-    MVP[1].proj[1][1] *= -1;
 }
 
 void Window::createWindow()

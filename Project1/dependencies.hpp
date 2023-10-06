@@ -15,9 +15,11 @@
 #include <vector>
 
 #define PREALLOCATED_SIZE 1000000
+#define MAX_OBJECTS 1000
+
 
 struct uniformBufferObject {
-    glm::mat4 model;
+    glm::mat4 model[MAX_OBJECTS];
     glm::mat4 view;
     glm::mat4 proj;
 };
@@ -25,9 +27,9 @@ struct uniformBufferObject {
 
 
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
-
+    glm::uint16 objectIndex;
 };
 
 struct Vertex2 {

@@ -24,7 +24,7 @@ public:
 	VkSwapchainKHR getSwapchain() { return swapchain; }
 
 	Instance* instance;
-	uniformBufferObject MVP[2];
+	uniformBufferObject MVP;
 
 private:
 	GLFWwindow* window;

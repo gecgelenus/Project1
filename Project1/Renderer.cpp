@@ -256,7 +256,7 @@ void Renderer::createGraphicsPipeline()
     pipelineInfo.pRasterizationState = &rasterizerInfo;
     pipelineInfo.pDynamicState = &dynamicStates;
     pipelineInfo.pMultisampleState = &multisampleInfo;
-    pipelineInfo.layout = pipelineLayout;
+   
     pipelineInfo.pViewportState = &viewportInfo;
     pipelineInfo.pDepthStencilState = nullptr;
     pipelineInfo.renderPass = renderPass;
@@ -352,7 +352,7 @@ void Renderer::createDescriptorPool()
 {
 
     VkDescriptorPoolSize poolSize{};
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAME_ON_PROCESS)*2;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAME_ON_PROCESS);
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -371,7 +371,7 @@ void Renderer::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding binding{};
     binding.binding = 0;
-    binding.descriptorCount = 2;
+    binding.descriptorCount = 1;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
@@ -411,16 +411,13 @@ void Renderer::allocateDescriptorSet()
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(uniformBufferObject);
 
-        VkDescriptorBufferInfo bufferInfo2{};
-        bufferInfo2.buffer = uniformBuffers[i];
-        bufferInfo2.offset = sizeof(uniformBufferObject);
-        bufferInfo2.range = sizeof(uniformBufferObject);
+       
 
-        VkDescriptorBufferInfo infos[] = { bufferInfo , bufferInfo2 };
+        VkDescriptorBufferInfo infos[] = { bufferInfo };
 
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.descriptorCount = 2;
+        descriptorWrite.descriptorCount = 1;
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrite.dstBinding = 0;
         descriptorWrite.dstSet = descriptorSets[i];
@@ -439,7 +436,7 @@ void Renderer::createUniformBuffers()
     uniformBufferMemoryMaps.resize(MAX_FRAME_ON_PROCESS);
 
 
-    VkDeviceSize size = sizeof(glm::mat4) * 6;
+    VkDeviceSize size = sizeof(uniformBufferObject);
 
     for (int i = 0; i < MAX_FRAME_ON_PROCESS; i++) {
         createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -449,7 +446,7 @@ void Renderer::createUniformBuffers()
 
 
         vkMapMemory(instance->getDevice(), uniformBufferMemories[i], 0, size, 0, &uniformBufferMemoryMaps[i]);
-        memcpy(uniformBufferMemoryMaps[i], window->MVP, size);
+        memcpy(uniformBufferMemoryMaps[i], &(window->MVP), size);
     }
 }
 
