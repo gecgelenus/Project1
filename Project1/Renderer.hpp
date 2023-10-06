@@ -26,6 +26,10 @@ public:
 	
 	
 	void createUniformBuffers();
+	void createStagingBuffers();
+
+	void updateVertexBuffer();
+	void updateIndexBuffer();
 
 	void recordCommandBuffer(VkCommandBuffer cbuffer, uint32_t imageIndex);
 	void createSyncObjects();
@@ -93,4 +97,10 @@ private:
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
+
+	VkBuffer stagingBufferVertex;
+	VkDeviceMemory stagingBufferMemoryVertex;
+	VkBuffer stagingBufferIndex;
+	VkDeviceMemory stagingBufferMemoryIndex;
+
 };

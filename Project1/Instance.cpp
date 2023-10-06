@@ -39,6 +39,8 @@ void Instance::initialize() {
 
 void Instance::pickPhysicalDevice() {
 	uint32_t deviceCount = 0;
+    bool selected = false;
+
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 	std::cout << "Device count: " << deviceCount << std::endl;
     if (deviceCount == 0) {
@@ -54,9 +56,40 @@ void Instance::pickPhysicalDevice() {
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		std::cout << "Device name: " << deviceProperties.deviceName << std::endl;
+        if (deviceProperties.deviceType == 0)
+        {
+			std::cout << "Device type: " << "VK_PHYSICAL_DEVICE_TYPE_OTHER" << std::endl;
+		}
+        else if (deviceProperties.deviceType == 1)
+        {
+			std::cout << "Device type: " << "VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU" << std::endl;
+		}
+        else if (deviceProperties.deviceType == 2)
+        {
+			std::cout << "Device type: " << "VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU" << std::endl;
+            physicalDevice = device;
+            std::cout << "Picked physical device: " << deviceProperties.deviceName << std::endl;
+            selected = true;
+        }
+        else if (deviceProperties.deviceType == 3)
+        {
+			std::cout << "Device type: " << "VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU" << std::endl;
+		}
+        else if (deviceProperties.deviceType == 4)
+        {
+			std::cout << "Device type: " << "VK_PHYSICAL_DEVICE_TYPE_CPU" << std::endl;
+		}
+        else
+        {
+			std::cout << "Device type: " << "Unknown" << std::endl;
+		}
 	}
-	physicalDevice = devices[0];
-	std::cout << "Picked physical device: " << physicalDevice << std::endl;
+
+    if (!selected) {
+        physicalDevice = devices[0];
+        std::cout << "Picked first physical device" << std::endl;
+    }
+	
 }
 
 void Instance::createLogicalDevice() {

@@ -103,21 +103,12 @@ int main() {
     object.setIndicies(indicies2);
     renderer.addObject(&object);
 
-    std::vector<uint16_t> indicies3;
-
-    for (uint16_t a: indicies2) {
-        indicies3.push_back(a + vertices2.size());
-    }
 
     Object object2(&instance, &window, "Triangle");
     object2.setVertices(vertices3);
-    object2.setIndicies(indicies3);
+    object2.setIndicies(indicies2);
     renderer.addObject(&object2);
-    
-    for (int i = 0; i < MAX_FRAME_ON_PROCESS; i++) {
-        renderer.recordCommandBuffer(renderer.commandBuffers[i], i);
-    }
-    
+  
     
 
     while (!glfwWindowShouldClose(window.getWindow())) {

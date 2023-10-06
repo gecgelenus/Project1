@@ -14,6 +14,8 @@
 #include <fstream>
 #include <vector>
 
+#define PREALLOCATED_SIZE 1000000
+
 struct uniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;

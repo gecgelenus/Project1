@@ -17,6 +17,9 @@ public:
 	std::vector<Vertex2> vertices;
 	std::vector<uint16_t> indicies;
 
+	uint32_t vertexBias;
+	uint32_t indexOffset;
+
 private:
 	Instance* instance;
 	Window* window;
