@@ -6,6 +6,9 @@ Object::Object(Instance* instance, Window* window, const char* name)
     this->window = window;
     this->name = name;
     position = glm::vec3(0.0f, 0.0f, 0.0f);
+    vertexBias = 0;
+    indexOffset = 0;
+    objectIndex = 0;
 }
 
 Object::~Object()

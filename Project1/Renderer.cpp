@@ -630,6 +630,7 @@ void Renderer::drawFrame()
 
 void Renderer::addObject(Object* object)
 {
+    object->objectIndex = objects.size();
     objects.push_back(object);
      
     
@@ -642,7 +643,7 @@ void Renderer::addObject(Object* object)
 	}
 
 
-    vertices.insert(vertices.end(), object->vertices.begin(), object->vertices.end());
+    vertices.insert(vertices.end(), object->vertices.begin(), object->vertices.end() );
 	indicies.insert(indicies.end(), object->indicies.begin(), object->indicies.end());
     
 
@@ -650,6 +651,32 @@ void Renderer::addObject(Object* object)
 
     updateVertexBuffer();
     updateIndexBuffer();
+
+    std::cout << "Added object to renderer:" << object->getName() << std::endl;
+
+}
+
+void Renderer::removeObject(Object* object)
+{
+    for (int i = object->objectIndex+1; i < objects.size() - object->objectIndex; i++) {
+        objects[i]->objectIndex--;
+        objects[i]->vertexBias -= object->vertices.size();
+        objects[i]->indexOffset -= object->indicies.size();
+    }
+
+
+    for (int i = object->indexOffset + object->indicies.size(); i <  indicies.size() ; i++) {
+				indicies[i] -= object->vertices.size();
+	}
+	
+    vertices.erase(vertices.begin() + object->vertexBias, vertices.begin() + object->vertexBias + object->vertices.size());
+    indicies.erase(indicies.begin() + object->indexOffset, indicies.begin() + object->indexOffset + object->indicies.size());
+
+    updateVertexBuffer();
+    updateIndexBuffer();
+
+    std::cout << "Removed object from renderer:" << object->getName() << std::endl;
+    objects.erase(objects.begin() + object->objectIndex);
 
 }
 

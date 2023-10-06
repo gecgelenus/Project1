@@ -36,6 +36,7 @@ public:
 	void drawFrame();
 
 	void addObject(Object* object);
+	void removeObject(Object* object);
 
 	
 
