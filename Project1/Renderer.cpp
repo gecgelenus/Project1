@@ -1,4 +1,6 @@
 #include "Renderer.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 Renderer::Renderer(Window* window, Instance* instance)
 {
@@ -29,6 +31,7 @@ void Renderer::initialize()
 	createUniformBuffers();
     createVertexBuffer();
     createIndexBuffer();
+    createTextureImage();
     createStagingBuffers();
 	allocateDescriptorSet();
 	createCommandBuffers();
@@ -354,6 +357,38 @@ void Renderer::createCommandBuffers()
     else {
         std::cout << "Command buffer is allocated." << std::endl;
     }
+
+}
+
+void Renderer::createTextureImage()
+{
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load("AS.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels) {
+		std::cerr << "Couldn't load texture image" << std::endl;
+	}
+
+    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        		stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(instance->getDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vkUnmapMemory(instance->getDevice(), stagingBufferMemory);
+
+    stbi_image_free(pixels);
+
+    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        		textureImage, textureImageMemory);
+
+
+
+    
 
 }
 
@@ -804,6 +839,43 @@ void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     vkBindBufferMemory(instance->getDevice(), buffer, bufferMemory, 0);
 
 
+}
+
+void Renderer::createImage(uint32_t width, uint32_t height, VkFormat format, 
+    VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+    VkImage& image, VkDeviceMemory& imageMemory)
+{
+    VkImageCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    createInfo.imageType = VK_IMAGE_TYPE_2D;
+    createInfo.extent.width = width;
+    createInfo.extent.height = height;
+    createInfo.extent.depth = 1;
+    createInfo.mipLevels = 1;
+    createInfo.arrayLayers = 1;
+    createInfo.format = format;
+    createInfo.tiling = tiling;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.usage = usage;
+    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(instance->getDevice(), &createInfo, nullptr, &image) != VK_SUCCESS) {
+        std::cerr << "Image couldn't created" << std::endl;
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(instance->getDevice(), image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
+        		properties);
+    allocInfo.allocationSize = memRequirements.size;
+
+    if (vkAllocateMemory(instance->getDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+		std::cerr << "Couldn't allocate memory for image!" << std::endl;
+	}
 }
 
 uint32_t Renderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {

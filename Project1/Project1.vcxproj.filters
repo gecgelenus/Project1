@@ -56,4 +56,9 @@
       <Filter>Üst Bilgi Dosyaları</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\Downloads\AS.jpg">
+      <Filter>Kaynak Dosyaları</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

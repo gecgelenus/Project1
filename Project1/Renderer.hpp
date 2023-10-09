@@ -19,6 +19,7 @@ public:
 	void createFramebuffers();
 	void createCommandPool();
 	void createCommandBuffers();
+	void createTextureImage();
 
 	void createDescriptorPool();
 	void createDescriptorSetLayout();
@@ -57,7 +58,6 @@ private:
 
 	VkCommandPool commandPool;
 	
-
 	
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBufferMemories;
@@ -77,6 +77,11 @@ private:
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
+	void createImage(uint32_t width, uint32_t height, VkFormat format,
+		VkImageTiling tiling, VkImageUsageFlags usage,
+		VkMemoryPropertyFlags properties, VkImage& image,
+		VkDeviceMemory& imageMemory);
 
 	void copyBuffers(VkBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -105,5 +110,9 @@ private:
 	VkDeviceMemory stagingBufferMemoryVertex;
 	VkBuffer stagingBufferIndex;
 	VkDeviceMemory stagingBufferMemoryIndex;
+
+
+	VkImage textureImage;
+	VkDeviceMemory textureImageMemory;
 
 };
