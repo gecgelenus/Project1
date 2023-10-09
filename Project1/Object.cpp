@@ -9,13 +9,14 @@ Object::Object(Instance* instance, Window* window, const char* name)
     vertexBias = 0;
     indexOffset = 0;
     objectIndex = 0;
+    
 }
 
 Object::~Object()
 {
 }
 
-void Object::setVertices(std::vector<Vertex2>& vertices)
+void Object::setVertices(std::vector<Vertex>& vertices)
 {
     this->vertices = vertices;
     
@@ -27,7 +28,15 @@ void Object::setIndicies(std::vector<uint16_t>& indicies)
 	
 }
 
-void Object::move(glm::vec3& position)
+void Object::move(const glm::vec3& position)
 {
     this->position += position;
+
+    window->MVP.model[objectIndex] = glm::translate(glm::mat4(1.0f), position);
+    std::cout << "Object " << name << " moved to " << position.x << " " << position.y << " " << position.z << std::endl;
+}
+
+void Object::move()
+{
+    window->MVP.model[objectIndex] = glm::translate(glm::mat4(1.0f), position);
 }

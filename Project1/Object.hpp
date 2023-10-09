@@ -10,13 +10,15 @@ public:
 	Object(Instance* instance, Window* window, const char* name);
 	~Object();
 
-	void setVertices(std::vector<Vertex2>& vertices);
+	void setVertices(std::vector<Vertex>& vertices);
 	void setIndicies(std::vector<uint16_t>& indicies);
-	void move(glm::vec3& position);
+	void move(const glm::vec3& position);
+	void move();
+
 
 	std::string getName() { return name; }
 
-	std::vector<Vertex2> vertices;
+	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indicies;
 
 	uint32_t vertexBias;

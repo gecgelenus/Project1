@@ -13,7 +13,7 @@ void Instance::initialize() {
     appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
 
 
     uint32_t glfwExtensionCount = 0;

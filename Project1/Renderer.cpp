@@ -21,7 +21,9 @@ void Renderer::initialize()
 	createRenderPass();
     createDescriptorPool();
     createDescriptorSetLayout();
+
 	createGraphicsPipeline();
+
     createFramebuffers();
     createCommandPool();
 	createUniformBuffers();
@@ -86,6 +88,7 @@ void Renderer::createRenderPass()
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
     colorAttachment.format = window->getFormat();
 
 
@@ -121,6 +124,7 @@ void Renderer::createRenderPass()
     if (vkCreateRenderPass(instance->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         std::cerr << "Couldn't create render pass" << std::endl;
     }
+
 }
 
 void Renderer::createGraphicsPipeline()
@@ -162,24 +166,29 @@ void Renderer::createGraphicsPipeline()
     VkVertexInputBindingDescription bindingInfo{};
     bindingInfo.binding = 0;
     bindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    bindingInfo.stride = sizeof(Vertex2);
+    bindingInfo.stride = sizeof(Vertex);
 
 
-    VkVertexInputAttributeDescription attributeInfos[2];
+    VkVertexInputAttributeDescription attributeInfos[3];
     attributeInfos[0].binding = 0;
     attributeInfos[0].location = 0;
     attributeInfos[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeInfos[0].offset = offsetof(Vertex2, pos);
+    attributeInfos[0].offset = offsetof(Vertex, pos);
 
     attributeInfos[1].binding = 0;
     attributeInfos[1].location = 1;
     attributeInfos[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeInfos[1].offset = offsetof(Vertex2, color);;
+    attributeInfos[1].offset = offsetof(Vertex, color);;
+
+    attributeInfos[2].binding = 0;
+    attributeInfos[2].location = 2;
+    attributeInfos[2].format = VK_FORMAT_R16_UINT;
+    attributeInfos[2].offset = offsetof(Vertex, objectIndex);;
 
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    vertexInputInfo.vertexAttributeDescriptionCount = 3;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingInfo;
     vertexInputInfo.pVertexAttributeDescriptions = attributeInfos;
@@ -359,7 +368,7 @@ void Renderer::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAME_ON_PROCESS)*2;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAME_ON_PROCESS)*3;
 
     if (vkCreateDescriptorPool(instance->getDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         std::cerr << "Descriptor pool couldn't created" << std::endl;
@@ -452,7 +461,7 @@ void Renderer::createUniformBuffers()
 
 void Renderer::createStagingBuffers()
 {
-    VkDeviceSize size = sizeof(Vertex2)  * PREALLOCATED_SIZE;
+    VkDeviceSize size = sizeof(Vertex)  * PREALLOCATED_SIZE;
 
 	createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -467,11 +476,13 @@ void Renderer::createStagingBuffers()
 void Renderer::updateVertexBuffer()
 {
     void* data;
-    vkMapMemory(instance->getDevice(), stagingBufferMemoryVertex, 0, sizeof(Vertex2) * vertices.size(), 0, &data);
-    memcpy(data, vertices.data(), sizeof(Vertex2) * vertices.size());
+    vkMapMemory(instance->getDevice(), stagingBufferMemoryVertex, 0, sizeof(Vertex) * vertices.size(), 0, &data);
+    memcpy(data, vertices.data(), sizeof(Vertex) * vertices.size());
 	vkUnmapMemory(instance->getDevice(), stagingBufferMemoryVertex);
 
-    copyBuffers(stagingBufferVertex, vertexBuffer, sizeof(Vertex2) * vertices.size());
+    copyBuffers(stagingBufferVertex, vertexBuffer, sizeof(Vertex) * vertices.size());
+
+    
 }
 
 void Renderer::updateIndexBuffer()
@@ -588,7 +599,7 @@ void Renderer::drawFrame()
 
     vkAcquireNextImageKHR(instance->getDevice(), window->getSwapchain(), UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    //updateUniformBuffer(imageIndex);
+    updateUniformBuffers(imageIndex);
 
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 
@@ -639,27 +650,43 @@ void Renderer::addObject(Object* object)
 		object->indicies[i] += object->vertexBias;
 	}
 
+    for (int i = 0; i < window->indexAvailable.size(); i++) {
+        if (window->indexAvailable[i] == true) {
+			object->objectIndex = i;
+			window->indexAvailable[i] = false;
+			break;
+		}
+	}
+
+
+    for (int i = 0; i < object->vertices.size(); i++) {
+		object->vertices[i].objectIndex = object->objectIndex;
+	}
+
 
     vertices.insert(vertices.end(), object->vertices.begin(), object->vertices.end() );
 	indicies.insert(indicies.end(), object->indicies.begin(), object->indicies.end());
     
-
     
+    object->move();
 
     updateVertexBuffer();
     updateIndexBuffer();
 
-    std::cout << "Added object to renderer:" << object->getName() << std::endl;
+    std::cout << "Added object to renderer:" << object->getName()  << "| Object Index: " << object->objectIndex << std::endl;
 
 }
 
 void Renderer::removeObject(Object* object)
 {
+    window->indexAvailable[object->objectIndex] = true;
+
     for (int i = object->objectIndex+1; i < objects.size() - object->objectIndex; i++) {
         objects[i]->objectIndex--;
         objects[i]->vertexBias -= object->vertices.size();
         objects[i]->indexOffset -= object->indicies.size();
     }
+    
 
 
     for (int i = object->indexOffset + object->indicies.size(); i <  indicies.size() ; i++) {
@@ -679,18 +706,23 @@ void Renderer::removeObject(Object* object)
 
 std::vector<char> Renderer::readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    std::cout << filename << std::endl;
 
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
     }
+    std::cout << filename << std::endl;
 
     size_t fileSize = (size_t)file.tellg();
     std::vector<char> buffer(fileSize);
+    std::cout << filename << std::endl;
 
     file.seekg(0);
     file.read(buffer.data(), fileSize);
+    std::cout << filename << std::endl;
 
     file.close();
+    std::cout << filename << std::endl;
 
     return buffer;
 
@@ -718,7 +750,7 @@ VkShaderModule Renderer::createShaderModule(const std::vector<char>& code)
 
 void Renderer::createVertexBuffer()
 {
-    VkDeviceSize size = sizeof(Vertex2) * PREALLOCATED_SIZE;
+    VkDeviceSize size = sizeof(Vertex) * PREALLOCATED_SIZE;
     createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         vertexBuffer, vertexBufferMemory);
@@ -734,6 +766,13 @@ void Renderer::createIndexBuffer()
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
     
+}
+
+void Renderer::updateUniformBuffers(uint32_t index)
+{
+    memcpy(uniformBufferMemoryMaps[index], &(window->MVP), 
+        sizeof(uniformBufferObject));
+
 }
 
 void Renderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,

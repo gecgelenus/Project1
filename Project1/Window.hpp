@@ -25,6 +25,7 @@ public:
 
 	Instance* instance;
 	uniformBufferObject MVP;
+	std::vector<bool> indexAvailable;
 
 private:
 	GLFWwindow* window;

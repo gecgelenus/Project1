@@ -32,9 +32,4 @@ struct Vertex {
     glm::uint16 objectIndex;
 };
 
-struct Vertex2 {
-    glm::vec3 pos;
-    glm::vec3 color;
-
-};
 

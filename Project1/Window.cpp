@@ -5,6 +5,7 @@ Window::Window(uint32_t width, uint32_t height, const std::string& title){
 	this->width = width;
 	this->height = height;
 	this->title = title;
+    indexAvailable.resize(MAX_OBJECTS, true);
 }
 
 Window::~Window()
@@ -15,13 +16,12 @@ Window::~Window()
 void Window::initialize()
 {
 	glfwInit();
-    MVP.view = glm::lookAt(glm::vec3(18.0f, 18.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP.view = glm::lookAt(glm::vec3(18.0f, 0.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     MVP.proj = glm::perspective(glm::radians(45.0f), ((float)800 / 600), 0.1f, 100.0f);
 
     MVP.proj[1][1] *= -1;
 
-    MVP.model[0] = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 1.0f));
-    MVP.model[1] = glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 5.0f, 5.0f));
+    
 
 }
 

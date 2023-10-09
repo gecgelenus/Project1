@@ -72,6 +72,8 @@ private:
 
 	void createVertexBuffer();
 	void createIndexBuffer();
+	void updateUniformBuffers(uint32_t index);
+
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -91,7 +93,7 @@ private:
 	uint32_t currentFrame;
 
 	std::vector<Object*> objects;
-	std::vector<Vertex2> vertices;
+	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indicies;
 
 	VkBuffer vertexBuffer;
