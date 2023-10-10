@@ -53,6 +53,8 @@ private:
 	VkDescriptorSetLayout descriptorLayout;
 	std::vector<VkDescriptorSet> descriptorSets;
 
+	VkSampler textureSampler;
+
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 
@@ -74,18 +76,27 @@ private:
 	void createIndexBuffer();
 	void updateUniformBuffers(uint32_t index);
 
+	void createSampler();
+
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
+	void createTextureImageView();
 	void createImage(uint32_t width, uint32_t height, VkFormat format,
 		VkImageTiling tiling, VkImageUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkImage& image,
 		VkDeviceMemory& imageMemory);
 
 	void copyBuffers(VkBuffer stagingBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
+	
+	void copyBufferToImage(VkBuffer stagingBuffer, VkImage dstImage, uint32_t width, uint32_t height);
+	void imageTransitionLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+	VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
 
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 
@@ -113,6 +124,7 @@ private:
 
 
 	VkImage textureImage;
+	VkImageView textureImageView;
 	VkDeviceMemory textureImageMemory;
 
 };
